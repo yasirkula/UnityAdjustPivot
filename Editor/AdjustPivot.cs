@@ -23,6 +23,9 @@ public class AdjustPivot : EditorWindow
 	private GUIStyle buttonStyle;
 	private GUIStyle headerStyle;
 
+	private Vector3 selectionPrevPos;
+	private Vector3 selectionPrevRot;
+
 	private Vector2 scrollPos = Vector2.zero;
 
 	[MenuItem( "Window/Adjust Pivot" )]
@@ -37,20 +40,44 @@ public class AdjustPivot : EditorWindow
 
 	private void OnEnable()
 	{
-		buttonStyle = new GUIStyle( EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector ).button ) { richText = true };
-		headerStyle = new GUIStyle( EditorGUIUtility.GetBuiltinSkin( EditorSkin.Inspector ).box ) { alignment = TextAnchor.MiddleCenter };
-
 		GetPrefs();
+
 		Selection.selectionChanged += Repaint;
+		EditorApplication.update += OnUpdate;
 	}
 
 	private void OnDisable()
 	{
 		Selection.selectionChanged -= Repaint;
+		EditorApplication.update -= OnUpdate;
+	}
+
+	private void OnUpdate()
+	{
+		Transform selection = Selection.activeTransform;
+		if( !IsNull( selection ) )
+		{
+			Vector3 pos = selection.localPosition;
+			Vector3 rot = selection.localEulerAngles;
+
+			if( pos != selectionPrevPos || rot != selectionPrevRot )
+			{
+				Repaint();
+
+				selectionPrevPos = pos;
+				selectionPrevRot = rot;
+			}
+		}
 	}
 
 	private void OnGUI()
 	{
+		if( buttonStyle == null )
+		{
+			buttonStyle = new GUIStyle( GUI.skin.button ) { richText = true };
+			headerStyle = new GUIStyle( GUI.skin.box ) { alignment = TextAnchor.MiddleCenter };
+		}
+
 		scrollPos = EditorGUILayout.BeginScrollView( scrollPos );
 
 		GUILayout.Box( "ADJUST PIVOT", headerStyle, GUILayout.ExpandWidth( true ), headerHeight );
@@ -60,8 +87,17 @@ public class AdjustPivot : EditorWindow
 		{
 			if( !IsNull( selection.parent ) )
 			{
-				if( GUILayout.Button( "Move <b>" + selection.parent.name + "</b>'s pivot here", buttonStyle, buttonHeight ) )
-					SetParentPivot( selection );
+				if( selection.localPosition != Vector3.zero || selection.localEulerAngles != Vector3.zero )
+				{
+					if( GUILayout.Button( "Move <b>" + selection.parent.name + "</b>'s pivot here", buttonStyle, buttonHeight ) )
+						SetParentPivot( selection );
+				}
+				else
+				{
+					GUI.enabled = false;
+					GUILayout.Button( "Selected object is at pivot position", buttonStyle, buttonHeight );
+					GUI.enabled = true;
+				}
 			}
 			else
 			{
@@ -155,12 +191,13 @@ public class AdjustPivot : EditorWindow
 		}
 		
 		MeshFilter meshFilter = pivotParent.GetComponent<MeshFilter>();
-		Mesh originalMesh = meshFilter.sharedMesh;
+		Mesh originalMesh = null;
 		if( !IsNull( meshFilter ) && !IsNull( meshFilter.sharedMesh ) )
 		{
 			Undo.RecordObject( meshFilter, UNDO_ADJUST_PIVOT );
 
-			Mesh mesh = Instantiate( meshFilter.sharedMesh );
+			originalMesh = meshFilter.sharedMesh;
+            Mesh mesh = Instantiate( meshFilter.sharedMesh );
 			meshFilter.sharedMesh = mesh;
 
 			Vector3[] vertices = mesh.vertices;
@@ -200,7 +237,7 @@ public class AdjustPivot : EditorWindow
 		foreach( Collider collider in colliders )
 		{
 			MeshCollider meshCollider = collider as MeshCollider;
-			if( !IsNull( meshCollider ) && meshCollider.sharedMesh == originalMesh )
+			if( !IsNull( meshCollider ) && !IsNull( originalMesh ) && meshCollider.sharedMesh == originalMesh )
 			{
 				Undo.RecordObject( meshCollider, UNDO_ADJUST_PIVOT );
 				meshCollider.sharedMesh = meshFilter.sharedMesh;
@@ -267,8 +304,6 @@ public class AdjustPivot : EditorWindow
 
 		pivot.localPosition = Vector3.zero;
 		pivot.localRotation = Quaternion.identity;
-
-		Selection.activeTransform = pivotParent;
 	}
 
 	private void SaveMesh( MeshFilter meshFilter, bool saveAsAsset )
@@ -279,7 +314,11 @@ public class AdjustPivot : EditorWindow
 			return;
 		}
 
-		string savePath = EditorUtility.SaveFilePanelInProject( "Save As", meshFilter.sharedMesh.name, saveAsAsset ? "asset" : "obj", string.Empty );
+		string savedMeshName = meshFilter.sharedMesh.name;
+		while( savedMeshName.EndsWith( "(Clone)" ) )
+			savedMeshName = savedMeshName.Substring( 0, savedMeshName.Length - 7 );
+
+        string savePath = EditorUtility.SaveFilePanelInProject( "Save As", savedMeshName, saveAsAsset ? "asset" : "obj", string.Empty );
 		if( string.IsNullOrEmpty( savePath ) )
 			return;
 
