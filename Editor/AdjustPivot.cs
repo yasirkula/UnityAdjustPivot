@@ -6,7 +6,7 @@ using UnityEngine.AI;
 
 public class AdjustPivot : EditorWindow
 {
-    private const string PIVOT_REFERENCE_POINT_NAME = "__PivotReferencePoint";
+	private const string PIVOT_REFERENCE_POINT_NAME = "__PivotReferencePoint";
 	private const string GENERATED_COLLIDER_NAME = "__GeneratedCollider";
 	private const string GENERATED_NAVMESH_OBSTACLE_NAME = "__GeneratedNavMeshObstacle";
 
@@ -19,7 +19,7 @@ public class AdjustPivot : EditorWindow
 
 	private GUILayoutOption buttonHeight = GUILayout.Height( 30 );
 	private GUILayoutOption headerHeight = GUILayout.Height( 25 );
-	
+
 	private GUIStyle buttonStyle;
 	private GUIStyle headerStyle;
 
@@ -112,12 +112,12 @@ public class AdjustPivot : EditorWindow
 			GUILayout.Button( "Nothing is selected", buttonStyle, buttonHeight );
 			GUI.enabled = true;
 		}
-		
+
 		GUILayout.Space( 15f );
 
 		GUILayout.Box( "MESH UTILITY", headerStyle, GUILayout.ExpandWidth( true ), headerHeight );
 
-		EditorGUILayout.HelpBox( "If you want to apply pivot adjustment of an object with a mesh to its prefab, you must save its mesh first.", MessageType.None );
+		EditorGUILayout.HelpBox( "If an object has a MeshFilter, changing its pivot will modify the mesh. That modified mesh must be saved before it can be applied to prefab.", MessageType.None );
 
 		if( !IsNull( selection ) )
 		{
@@ -152,7 +152,7 @@ public class AdjustPivot : EditorWindow
 
 		EditorGUI.BeginChangeCheck();
 		createColliderObjectOnPivotChange = EditorGUILayout.ToggleLeft( "Create Child Collider Object On Pivot Change", createColliderObjectOnPivotChange );
-		EditorGUILayout.HelpBox( "Note that original collider(s) (if exists) will not be destroyed automatically. Also note that MeshCollider's using MeshFilter's mesh will be changed in-place and not copied to child collider object.", MessageType.None );
+		EditorGUILayout.HelpBox( "Note that original collider(s) (if exists) will not be destroyed automatically.", MessageType.None );
 		if( EditorGUI.EndChangeCheck() )
 			EditorPrefs.SetBool( "AdjustPivotCreateColliders", createColliderObjectOnPivotChange );
 
@@ -174,7 +174,7 @@ public class AdjustPivot : EditorWindow
 		createColliderObjectOnPivotChange = EditorPrefs.GetBool( "AdjustPivotCreateColliders", false );
 		createNavMeshObstacleObjectOnPivotChange = EditorPrefs.GetBool( "AdjustPivotCreateNavMeshObstacle", false );
 	}
-	
+
 	private void SetParentPivot( Transform pivot )
 	{
 		Transform pivotParent = pivot.parent;
@@ -189,7 +189,7 @@ public class AdjustPivot : EditorWindow
 			Debug.LogWarning( "Pivot hasn't changed!" );
 			return;
 		}
-		
+
 		MeshFilter meshFilter = pivotParent.GetComponent<MeshFilter>();
 		Mesh originalMesh = null;
 		if( !IsNull( meshFilter ) && !IsNull( meshFilter.sharedMesh ) )
@@ -197,7 +197,7 @@ public class AdjustPivot : EditorWindow
 			Undo.RecordObject( meshFilter, UNDO_ADJUST_PIVOT );
 
 			originalMesh = meshFilter.sharedMesh;
-            Mesh mesh = Instantiate( meshFilter.sharedMesh );
+			Mesh mesh = Instantiate( meshFilter.sharedMesh );
 			meshFilter.sharedMesh = mesh;
 
 			Vector3[] vertices = mesh.vertices;
@@ -280,7 +280,7 @@ public class AdjustPivot : EditorWindow
 				Undo.RegisterCreatedObjectUndo( obstacleObj, UNDO_ADJUST_PIVOT );
 			}
 		}
-		
+
 		Transform[] children = new Transform[pivotParent.childCount];
 		Vector3[] childrenLocalScales = new Vector3[children.Length];
 		for( int i = children.Length - 1; i >= 0; i-- )
@@ -318,7 +318,7 @@ public class AdjustPivot : EditorWindow
 		while( savedMeshName.EndsWith( "(Clone)" ) )
 			savedMeshName = savedMeshName.Substring( 0, savedMeshName.Length - 7 );
 
-        string savePath = EditorUtility.SaveFilePanelInProject( "Save As", savedMeshName, saveAsAsset ? "asset" : "obj", string.Empty );
+		string savePath = EditorUtility.SaveFilePanelInProject( "Save As", savedMeshName, saveAsAsset ? "asset" : "obj", string.Empty );
 		if( string.IsNullOrEmpty( savePath ) )
 			return;
 
@@ -329,7 +329,7 @@ public class AdjustPivot : EditorWindow
 			Undo.RecordObject( meshFilter, UNDO_SAVE_MODEL_AS );
 			meshFilter.sharedMesh = savedMesh;
 		}
-		
+
 		MeshCollider[] meshColliders = meshFilter.GetComponents<MeshCollider>();
 		foreach( MeshCollider meshCollider in meshColliders )
 		{
@@ -340,13 +340,13 @@ public class AdjustPivot : EditorWindow
 			}
 		}
 	}
-	
+
 	private Mesh SaveMeshAsAsset( MeshFilter meshFilter, string savePath )
 	{
 		Mesh mesh = meshFilter.sharedMesh;
 		if( !string.IsNullOrEmpty( AssetDatabase.GetAssetPath( mesh ) ) ) // If mesh is an asset, clone it
 			mesh = Instantiate( mesh );
-		
+
 		AssetDatabase.CreateAsset( mesh, savePath );
 		AssetDatabase.SaveAssets();
 
@@ -406,7 +406,7 @@ public class AdjustPivot : EditorWindow
 		PrefabType prefabType = PrefabUtility.GetPrefabType( obj );
 		return prefabType == PrefabType.Prefab || prefabType == PrefabType.ModelPrefab;
 	}
-	
+
 	private bool IsNull( Object obj )
 	{
 		return obj == null || obj.Equals( null );
