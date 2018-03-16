@@ -1,6 +1,10 @@
 # Pivot Editor for Unity
 ![screenshot](screenshot.png)
 
+**Available on Asset Store:** https://www.assetstore.unity3d.com/en/#!/content/112883
+
+**Forum Thread:** https://forum.unity.com/threads/adjust-pivot-without-using-an-empty-parent-object-open-source.520178/
+
 This script allows you to change the pivot point of an object without having to create an empty GameObject as the pivot point. There are two types of pivot adjustments:
 
 **a.** If the object does not have a mesh (**MeshFilter**, to be precise), then the script simply changes the positions and rotations of child objects accordingly
