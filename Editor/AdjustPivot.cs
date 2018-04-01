@@ -1,8 +1,10 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_5_5_OR_NEWER
 using UnityEngine.AI;
+#endif
 
 public class AdjustPivot : EditorWindow
 {
