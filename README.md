@@ -1,7 +1,7 @@
 # Pivot Editor for Unity
 ![screenshot](Images/screenshot.png)
 
-**Available on Asset Store:** https://www.assetstore.unity3d.com/en/#!/content/112883
+**Available on Asset Store:** https://assetstore.unity.com/packages/tools/utilities/adjust-pivot-112883
 
 **Forum Thread:** https://forum.unity.com/threads/adjust-pivot-without-using-an-empty-parent-object-open-source.520178/
 
@@ -14,10 +14,12 @@ This script allows you to change the pivot point of an object without having to 
 *Not tested with SkinnedMeshRenderer.*
 
 ## Upgrading From Previous Versions
+
 Delete *Editor/AdjustPivot.cs* (if exists) before upgrading the plugin.
 
 ## HOW TO
-Simply import **AdjustPivot.unitypackage** to your project and open the *Adjust Pivot* window via the **Window-Adjust Pivot** menu.
+
+Simply import [AdjustPivot.unitypackage](https://github.com/yasirkula/UnityAdjustPivot/releases) to your project and open the *Adjust Pivot* window via the **Window-Adjust Pivot** menu.
 
 To change an object's pivot point, you can create an empty **child GameObject** and move it to the desired pivot position. Then, you can press the **Move X's pivot here** button to move the parent object's pivot there. It is safe to delete the empty child object afterwards.
 
