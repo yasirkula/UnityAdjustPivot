@@ -17,14 +17,16 @@ This script allows you to change the pivot point of an object without having to 
 
 ## INSTALLATION
 
-There are 4 ways to install this plugin:
+There are 5 ways to install this plugin:
 
 - import [AdjustPivot.unitypackage](https://github.com/yasirkula/UnityAdjustPivot/releases) via *Assets-Import Package*
 - clone/[download](https://github.com/yasirkula/UnityAdjustPivot/archive/master.zip) this repository and move the *Plugins* folder to your Unity project's *Assets* folder
 - import it from [Asset Store](https://assetstore.unity.com/packages/tools/utilities/adjust-pivot-112883)
 - *(via Package Manager)* add the following line to *Packages/manifest.json*:
   - `"com.yasirkula.adjustpivot": "https://github.com/yasirkula/UnityAdjustPivot.git",`
-
+- *(via [OpenUPM](https://openupm.com))* after installing [openupm-cli](https://github.com/openupm/openupm-cli), run the following command:
+  - `openupm add com.yasirkula.adjustpivot`
+  
 ## HOW TO
 
 Open the *Adjust Pivot* window via the **Window-Adjust Pivot** menu.
