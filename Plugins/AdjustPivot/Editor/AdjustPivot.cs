@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 #if UNITY_5_5_OR_NEWER
 using UnityEngine.AI;
 #endif
@@ -11,6 +12,7 @@ public class AdjustPivot : EditorWindow
 {
 	private const string GENERATED_COLLIDER_NAME = "__GeneratedCollider";
 	private const string GENERATED_NAVMESH_OBSTACLE_NAME = "__GeneratedNavMeshObstacle";
+	private const string GENERATED_EMPTY_PARENT_NAME = "__GeneratedParent";
 
 	private const string UNDO_CREATE_PIVOT_REFERENCE = "Create Pivot Reference";
 	private const string UNDO_ADJUST_PIVOT = "Move Pivot";
@@ -19,7 +21,6 @@ public class AdjustPivot : EditorWindow
 	private bool createColliderObjectOnPivotChange = false;
 	private bool createNavMeshObstacleObjectOnPivotChange = false;
 
-	private readonly GUILayoutOption buttonHeight = GUILayout.Height( 30 );
 	private readonly GUILayoutOption headerHeight = GUILayout.Height( 25 );
 
 	private GUIStyle buttonStyle;
@@ -76,7 +77,7 @@ public class AdjustPivot : EditorWindow
 	{
 		if( buttonStyle == null )
 		{
-			buttonStyle = new GUIStyle( GUI.skin.button ) { richText = true };
+			buttonStyle = new GUIStyle( GUI.skin.button ) { richText = true, wordWrap = true, padding = new RectOffset( 7, 7, 7, 7 ) };
 			headerStyle = new GUIStyle( GUI.skin.box ) { alignment = TextAnchor.MiddleCenter };
 		}
 
@@ -89,32 +90,51 @@ public class AdjustPivot : EditorWindow
 		{
 			if( !IsNull( selection.parent ) )
 			{
-				if( selection.localPosition != Vector3.zero || selection.localEulerAngles != Vector3.zero )
+#if UNITY_2018_3_OR_NEWER
+				if( UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() == null )
 				{
-					if( GUILayout.Button( "Move <b>" + selection.parent.name + "</b>'s pivot here", buttonStyle, buttonHeight ) )
-						SetParentPivot( selection );
+#endif
+					if( selection.localPosition != Vector3.zero || selection.localEulerAngles != Vector3.zero )
+					{
+						if( GUILayout.Button( string.Concat( "Move <b>", selection.parent.name, "</b>'s pivot here" ), buttonStyle ) )
+							SetParentPivot( selection );
 
-					if( selection.localEulerAngles != Vector3.zero )
-						EditorGUILayout.HelpBox( "Pivot will also be rotated to match " + selection.name + "'s rotation.", MessageType.None );
+						if( selection.localEulerAngles != Vector3.zero )
+						{
+							Vector3 parentScale = selection.parent.localScale;
+							if( Mathf.Approximately( parentScale.x, parentScale.y ) && Mathf.Approximately( parentScale.x, parentScale.z ) )
+								EditorGUILayout.HelpBox( string.Concat( "Pivot will also be rotated to match ", selection.name, "'s rotation." ), MessageType.None );
+							else
+								EditorGUILayout.HelpBox( string.Concat( "Edge case! 1) ", selection.parent.name, " has non-uniform scale and 2) ", selection.name, " is rotated.\n\nTo change the pivot correctly in this scenario, ", selection.parent.name, " will be parented to an empty GameObject with the same non-uniform scale value." ), MessageType.Warning );
+						}
+					}
+					else
+					{
+						GUI.enabled = false;
+						GUILayout.Button( "Selected object is at pivot position", buttonStyle );
+						GUI.enabled = true;
+					}
+#if UNITY_2018_3_OR_NEWER
 				}
 				else
 				{
 					GUI.enabled = false;
-					GUILayout.Button( "Selected object is at pivot position", buttonStyle, buttonHeight );
+					GUILayout.Button( "Modifying prefabs directly is not allowed, create an instance in the scene instead!", buttonStyle );
 					GUI.enabled = true;
 				}
+#endif
 			}
 			else
 			{
 				GUI.enabled = false;
-				GUILayout.Button( "Selected object has no parent", buttonStyle, buttonHeight );
+				GUILayout.Button( "Selected object has no parent", buttonStyle );
 				GUI.enabled = true;
 			}
 		}
 		else
 		{
 			GUI.enabled = false;
-			GUILayout.Button( "Nothing is selected", buttonStyle, buttonHeight );
+			GUILayout.Button( "Nothing is selected", buttonStyle );
 			GUI.enabled = true;
 		}
 
@@ -129,25 +149,25 @@ public class AdjustPivot : EditorWindow
 			MeshFilter meshFilter = selection.GetComponent<MeshFilter>();
 			if( !IsNull( meshFilter ) && !IsNull( meshFilter.sharedMesh ) )
 			{
-				if( GUILayout.Button( "Save <b>" + selection.name + "</b>'s mesh as Asset (Recommended)", buttonStyle, buttonHeight ) )
+				if( GUILayout.Button( string.Concat( "Save <b>", selection.name, "</b>'s mesh as Asset (Recommended)" ), buttonStyle ) )
 					SaveMesh( meshFilter, true );
 
 				GUILayout.Space( 5f );
 
-				if( GUILayout.Button( "Save <b>" + selection.name + "</b>'s mesh as OBJ", buttonStyle, buttonHeight ) )
+				if( GUILayout.Button( string.Concat( "Save <b>", selection.name, "</b>'s mesh as OBJ" ), buttonStyle ) )
 					SaveMesh( meshFilter, false );
 			}
 			else
 			{
 				GUI.enabled = false;
-				GUILayout.Button( "Selected object has no mesh", buttonStyle, buttonHeight );
+				GUILayout.Button( "Selected object has no mesh", buttonStyle );
 				GUI.enabled = true;
 			}
 		}
 		else
 		{
 			GUI.enabled = false;
-			GUILayout.Button( "Nothing is selected", buttonStyle, buttonHeight );
+			GUILayout.Button( "Nothing is selected", buttonStyle );
 			GUI.enabled = true;
 		}
 
@@ -193,6 +213,30 @@ public class AdjustPivot : EditorWindow
 		{
 			Debug.LogWarning( "Pivot hasn't changed!" );
 			return;
+		}
+
+		if( pivot.localEulerAngles != Vector3.zero )
+		{
+			Vector3 parentScale = pivotParent.localScale;
+			if( !Mathf.Approximately( parentScale.x, parentScale.y ) || !Mathf.Approximately( parentScale.x, parentScale.z ) )
+			{
+				// This is an edge case (object has non-uniform scale and pivot is rotated). We must create an empty parent GameObject in this scenario
+				GameObject emptyParentObject = new GameObject( GENERATED_EMPTY_PARENT_NAME );
+				if( !IsNull( pivotParent.parent ) )
+					emptyParentObject.transform.SetParent( pivotParent.parent, false );
+				else
+					SceneManager.MoveGameObjectToScene( emptyParentObject, pivotParent.gameObject.scene );
+
+				emptyParentObject.transform.localPosition = pivotParent.localPosition;
+				emptyParentObject.transform.localRotation = pivotParent.localRotation;
+				emptyParentObject.transform.localScale = pivotParent.localScale;
+
+				Undo.RegisterCreatedObjectUndo( emptyParentObject, UNDO_ADJUST_PIVOT );
+				Undo.SetTransformParent( pivotParent, emptyParentObject.transform, UNDO_ADJUST_PIVOT );
+
+				// Automatically expand the newly created empty parent GameObject in Hierarchy
+				EditorGUIUtility.PingObject( pivot.gameObject );
+			}
 		}
 
 		MeshFilter meshFilter = pivotParent.GetComponent<MeshFilter>();

@@ -1,6 +1,6 @@
 {
   "name": "com.yasirkula.adjustpivot",
   "displayName": "Adjust Pivot",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "This tool helps you change the pivot point of an object without having to create an empty parent object as the pivot point."
 }
