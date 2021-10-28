@@ -5,6 +5,8 @@
 
 **Forum Thread:** https://forum.unity.com/threads/adjust-pivot-without-using-an-empty-parent-object-open-source.520178/
 
+**Discord:** https://discord.gg/UJJt549AaV
+
 **[Support the Developer ☕](https://yasirkula.itch.io/unity3d)**
 
 This script allows you to change the pivot point of an object without having to create an empty GameObject as the pivot point. There are two types of pivot adjustments:
