@@ -90,10 +90,12 @@ public class AdjustPivot : EditorWindow
 		{
 			if( !IsNull( selection.parent ) )
 			{
-#if UNITY_2018_3_OR_NEWER
+#if UNITY_2021_2_OR_NEWER
+				if( UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() == null )
+#elif UNITY_2018_3_OR_NEWER
 				if( UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() == null )
-				{
 #endif
+				{
 					if( selection.localPosition != Vector3.zero || selection.localEulerAngles != Vector3.zero )
 					{
 						if( GUILayout.Button( string.Concat( "Move <b>", selection.parent.name, "</b>'s pivot here" ), buttonStyle ) )
@@ -114,8 +116,8 @@ public class AdjustPivot : EditorWindow
 						GUILayout.Button( "Selected object is at pivot position", buttonStyle );
 						GUI.enabled = true;
 					}
-#if UNITY_2018_3_OR_NEWER
 				}
+#if UNITY_2018_3_OR_NEWER
 				else
 				{
 					GUI.enabled = false;
