@@ -7,7 +7,7 @@
 
 **Discord:** https://discord.gg/UJJt549AaV
 
-**[Support the Developer ☕](https://yasirkula.itch.io/unity3d)**
+**[GitHub Sponsors ☕](https://github.com/sponsors/yasirkula)**
 
 This script allows you to change the pivot point of an object without having to create an empty GameObject as the pivot point. There are two types of pivot adjustments:
 
